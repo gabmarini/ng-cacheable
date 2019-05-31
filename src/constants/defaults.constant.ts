@@ -1,13 +1,17 @@
 import {of, pipe} from 'rxjs';
 import {tap} from 'rxjs/operators';
 import {CacheService} from '../services/cache.service';
+import {CacheInsertion} from '../interfaces/cache-insertion.interface';
 
 export const Defaults = {
   defaultTTL: 30 * 1000
 };
 
-export const cacheResultOperator = (cacheKey: string, ttl: number) => {
+export const cacheResultOperator = (cacheInsertion: CacheInsertion) => {
   return pipe(
-    tap(result => CacheService.getInstance().insertCacheResult(cacheKey, of(result), ttl)),
+    tap(result => {
+      cacheInsertion.result = of(result);
+      CacheService.getInstance().insertCacheResult(cacheInsertion);
+    }),
   );
 };

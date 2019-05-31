@@ -1,5 +1,5 @@
 export interface ICachedMetadataInterface {
-  cacheKey?: string;
+  cacheBustingKey?: string;
   cacheBustedBy?: string;
   cacheTTL?: number;
 }

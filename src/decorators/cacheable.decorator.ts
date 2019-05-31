@@ -1,30 +1,29 @@
-import {ICacheBusterMetadataInterface, ICachedMetadataInterface} from '../interfaces/ICacheable-metadata.interface';
+import {ICacheBusterMetadataInterface, ICachedMetadataInterface} from '../interfaces/Icacheable-metadata.interface';
 import {CacheService} from '../services/cache.service';
 import {cacheResultOperator, Defaults} from '../constants/defaults.constant';
-import * as momentImported from 'moment';
-import {isEmpty} from 'lodash';
 import {isObservable, throwError} from 'rxjs';
 import {catchError} from 'rxjs/operators';
+import {CacheInsertion} from '../interfaces/cache-insertion.interface';
 
-const moment = momentImported;
 
 export function Cached(metadata?: ICachedMetadataInterface): MethodDecorator {
 
-  function cacheResult(result, key: string) {
-    if (isObservable(result)) {
-      result = result.pipe(
+  function cacheResult(cacheInsertion: CacheInsertion) {
+    if (isObservable(cacheInsertion.result)) {
+      cacheInsertion.result = cacheInsertion.result.pipe(
         catchError(err => throwError(err)),
-        cacheResultOperator(key, moment().valueOf() + metadata.cacheTTL),
+        cacheResultOperator(cacheInsertion)
       );
     } else {
-      if (!!result) {
-        CacheService.getInstance().insertCacheResult(key, result, moment().valueOf() + metadata.cacheTTL);
+      if (!!cacheInsertion.result) {
+        CacheService.getInstance()
+          .insertCacheResult(cacheInsertion);
       }
     }
-    return result;
+    return cacheInsertion.result;
   }
 
-  return function (target: Function, key: string, descriptor: PropertyDescriptor) {
+  return function (target: Function, method: string, descriptor: PropertyDescriptor) {
 
     if (!metadata.cacheTTL) {
       metadata.cacheTTL = Defaults.defaultTTL;
@@ -34,19 +33,23 @@ export function Cached(metadata?: ICachedMetadataInterface): MethodDecorator {
 
     descriptor.value = function (...args: any[]) {
 
-      if (isEmpty(metadata.cacheKey)) {
-        metadata.cacheKey = `${key}|${args.join('')}`;
-      }
-
       const service: CacheService = CacheService.getInstance();
 
-      const hasCacheHit = service.canBeCacheHit(metadata.cacheKey);
+      const hasCacheHit = service.canBeCacheHit(method, args);
       let result;
       if (hasCacheHit) {
-        result = service.getCacheHit(metadata.cacheKey);
+        result = service.getCacheHit(method, args);
       } else {
         result = originalMethod.apply(this, args);
-        result = cacheResult(result, metadata.cacheKey);
+        const cacheInsertion: CacheInsertion = {
+          args: args,
+          bustingKey: metadata.cacheBustingKey,
+          method: method,
+          result: result,
+          ttl: metadata.cacheTTL,
+          cacheKey: CacheService.buildHashedKey(method, args)
+        };
+        result = cacheResult(cacheInsertion);
       }
       return result;
     };

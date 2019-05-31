@@ -16,7 +16,7 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    interval(4000).subscribe(() => {
+    interval(2000).subscribe(() => {
       this.testMethod().pipe(catchError(err => {
         return of(null);
       })).subscribe();
@@ -28,7 +28,7 @@ export class AppComponent implements OnInit {
   }
 
   @Cached({
-    cacheKey: 'pippo',
+    cacheBustingKey: 'pippo',
     cacheTTL: 30 * 1000
   })
   testMethod() {

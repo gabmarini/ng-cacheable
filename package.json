@@ -1,6 +1,6 @@
 {
   "name": "ng-cacheable",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -8,7 +8,8 @@
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "packagr": "ng-packagr -p ng-package.json"
+    "packagr": "ng-packagr -p ng-package.json",
+    "dist": "rm -r dist && ng-packagr -p ng-package.json && npm publish dist"
   },
   "dependencies": {
     "@angular/animations": "^6.1.0",

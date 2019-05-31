@@ -1,19 +1,19 @@
 import * as momentImported from 'moment';
 import {CacheItem} from '../interfaces/cache.item';
 import {Moment} from 'moment';
-import {interval} from 'rxjs';
+import {CacheInsertion} from '../interfaces/cache-insertion.interface';
 
 const moment = momentImported;
 
 // @dynamic
 export class CacheService {
 
-  private static instance: CacheService = null;
-  private readonly cacheMap: Map<string, CacheItem>;
-
   private constructor() {
     this.cacheMap = new Map<string, any>();
   }
+
+  private static instance: CacheService = null;
+  private readonly cacheMap: Map<string, CacheItem>;
 
   static getInstance(): CacheService {
     if (!CacheService.instance) {
@@ -26,9 +26,9 @@ export class CacheService {
   static hashString = string => {
     let hash = 0, i, chr;
     for (i = 0; i < string.length; i++) {
-      chr   = string.charCodeAt(i);
+      chr = string.charCodeAt(i);
       // tslint:disable-next-line:no-bitwise
-      hash  = ((hash << 5) - hash) + chr;
+      hash = ((hash << 5) - hash) + chr;
       // tslint:disable-next-line:no-bitwise
       hash |= 0; // Convert to 32bit integer
     }
@@ -40,24 +40,42 @@ export class CacheService {
     return now.valueOf() < cacheItem.expirationTimeMillis;
   }
 
-  insertCacheResult(key: string, result: any, ttl: number) {
-    this.cacheMap.set(CacheService.hashString(key), {cachedResult: result, expirationTimeMillis: ttl});
+  static buildPreHashedKey(method: string, args: any[]) {
+    return `${method}|${args.join('')}`;
   }
 
-  canBeCacheHit(key: string): boolean {
-    const hashedKey: string = CacheService.hashString(key);
+  static buildHashedKey(method: string, args: any[]) {
+    return CacheService.hashString(CacheService.buildPreHashedKey(method, args));
+  }
+
+  insertCacheResult(cacheInsertion: CacheInsertion) {
+    this.cacheMap.set(cacheInsertion.cacheKey, {
+      cachedResult: cacheInsertion.result,
+      expirationTimeMillis: moment().valueOf() + cacheInsertion.ttl,
+      bustingKey: cacheInsertion.bustingKey
+    });
+  }
+
+  canBeCacheHit(method: string, args: any[]): boolean {
+    const hashedKey: string = CacheService.buildHashedKey(method, args);
     if (this.cacheMap.has(hashedKey)) {
       const cacheItem: CacheItem = this.cacheMap.get(hashedKey);
       return CacheService.isFreshCacheItem(cacheItem);
     }
+    return false;
   }
 
-  getCacheHit(key: string) {
-    return this.cacheMap.get(CacheService.hashString(key)).cachedResult;
+  getCacheHit(method: string, args: any[]) {
+    return this.cacheMap.get(CacheService.buildHashedKey(method, args)).cachedResult;
   }
 
   deleteCacheHit(key: string) {
-    return this.cacheMap.delete(CacheService.hashString(key));
+    Array.from(this.cacheMap.keys()).forEach((cacheKey: string) => {
+      const cacheItem: CacheItem = this.cacheMap.get(cacheKey);
+      if (cacheItem.bustingKey === key) {
+        this.cacheMap.delete(cacheKey);
+      }
+    });
   }
 
 }
