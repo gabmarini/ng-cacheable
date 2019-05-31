@@ -9,6 +9,5 @@ export const Defaults = {
 export const cacheResultOperator = (cacheKey: string, ttl: number) => {
   return pipe(
     tap(result => CacheService.getInstance().insertCacheResult(cacheKey, of(result), ttl)),
-    tap(_ => console.log('cached'))
   );
 };

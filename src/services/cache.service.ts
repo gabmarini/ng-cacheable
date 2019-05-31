@@ -1,15 +1,17 @@
-import * as moment from 'moment';
+import * as momentImported from 'moment';
 import {CacheItem} from '../interfaces/cache.item';
 import {Moment} from 'moment';
 import {interval} from 'rxjs';
 
+const moment = momentImported;
+
+// @dynamic
 export class CacheService {
 
-  private static instance: CacheService;
+  private static instance: CacheService = null;
   private readonly cacheMap: Map<string, CacheItem>;
 
   private constructor() {
-    interval(2000).subscribe(_ => console.log(this.cacheMap));
     this.cacheMap = new Map<string, any>();
   }
 
@@ -39,13 +41,11 @@ export class CacheService {
   }
 
   insertCacheResult(key: string, result: any, ttl: number) {
-    console.log('inserting', key);
     this.cacheMap.set(CacheService.hashString(key), {cachedResult: result, expirationTimeMillis: ttl});
   }
 
   canBeCacheHit(key: string): boolean {
     const hashedKey: string = CacheService.hashString(key);
-    console.log(key, hashedKey, this.cacheMap);
     if (this.cacheMap.has(hashedKey)) {
       const cacheItem: CacheItem = this.cacheMap.get(hashedKey);
       return CacheService.isFreshCacheItem(cacheItem);

@@ -1,7 +1,8 @@
 import {Component, OnInit} from '@angular/core';
 import {CacheBuster, Cached} from '../decorators/cacheable.decorator';
 import {HttpClient} from '@angular/common/http';
-import {interval} from 'rxjs';
+import {interval, of} from 'rxjs';
+import {catchError} from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -16,7 +17,9 @@ export class AppComponent implements OnInit {
 
   ngOnInit(): void {
     interval(4000).subscribe(() => {
-      this.testMethod().subscribe();
+      this.testMethod().pipe(catchError(err => {
+        return of(null);
+      })).subscribe();
     });
 
     interval(10000).subscribe(_ => {

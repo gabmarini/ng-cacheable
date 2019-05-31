@@ -1,17 +1,21 @@
 import {ICacheBusterMetadataInterface, ICachedMetadataInterface} from '../interfaces/ICacheable-metadata.interface';
 import {CacheService} from '../services/cache.service';
-import {isObservable} from 'rxjs';
 import {cacheResultOperator, Defaults} from '../constants/defaults.constant';
-import * as moment from 'moment';
+import * as momentImported from 'moment';
 import {isEmpty} from 'lodash';
+import {isObservable, throwError} from 'rxjs';
+import {catchError} from 'rxjs/operators';
+
+const moment = momentImported;
 
 export function Cached(metadata?: ICachedMetadataInterface): MethodDecorator {
 
   function cacheResult(result, key: string) {
-    console.log('into cache result');
     if (isObservable(result)) {
-      console.log('isObservable');
-      result = result.pipe(cacheResultOperator(key, moment().valueOf() + metadata.cacheTTL));
+      result = result.pipe(
+        catchError(err => throwError(err)),
+        cacheResultOperator(key, moment().valueOf() + metadata.cacheTTL),
+      );
     } else {
       if (!!result) {
         CacheService.getInstance().insertCacheResult(key, result, moment().valueOf() + metadata.cacheTTL);
@@ -39,14 +43,11 @@ export function Cached(metadata?: ICachedMetadataInterface): MethodDecorator {
       const hasCacheHit = service.canBeCacheHit(metadata.cacheKey);
       let result;
       if (hasCacheHit) {
-        console.log('Hit!!');
         result = service.getCacheHit(metadata.cacheKey);
       } else {
-        console.log('MISS!!');
         result = originalMethod.apply(this, args);
         result = cacheResult(result, metadata.cacheKey);
       }
-      console.log(`Leaving ${key} method`);
       return result;
     };
     return descriptor;
@@ -56,7 +57,6 @@ export function Cached(metadata?: ICachedMetadataInterface): MethodDecorator {
 export function CacheBuster(metadata?: ICacheBusterMetadataInterface): MethodDecorator {
 
   function bustCacheResult(key: string) {
-    console.log('Busting: ', key);
     CacheService.getInstance().deleteCacheHit(key);
   }
 
