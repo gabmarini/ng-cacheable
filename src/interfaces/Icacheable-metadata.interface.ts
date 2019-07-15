@@ -12,4 +12,3 @@ export interface CacheLogger {
 export interface ICacheBusterMetadataInterface {
   cacheBusterFor?: string;
 }
-

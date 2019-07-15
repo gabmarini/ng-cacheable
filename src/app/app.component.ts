@@ -7,8 +7,8 @@ import {CacheLogger} from '../interfaces/Icacheable-metadata.interface';
 
 export class CacheLoggerTest implements CacheLogger {
   log = (payload: any) => {
-    console.log('cached', payload);
-  };
+    console.log(payload);
+  }
 }
 
 const loggerTest = new CacheLoggerTest();
