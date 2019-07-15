@@ -18,6 +18,9 @@ export function Cached(metadata?: ICachedMetadataInterface): MethodDecorator {
       if (!!cacheInsertion.result) {
         CacheService.getInstance()
           .insertCacheResult(cacheInsertion);
+        // if (!!metadata.logger) {
+        metadata.logger.log(cacheInsertion);
+        // }
       }
     }
     return cacheInsertion.result;
@@ -39,6 +42,7 @@ export function Cached(metadata?: ICachedMetadataInterface): MethodDecorator {
       let result;
       if (hasCacheHit) {
         result = service.getCacheHit(method, args);
+        // metadata.logger.log(result.value);
       } else {
         result = originalMethod.apply(this, args);
         const cacheInsertion: CacheInsertion = {
@@ -51,6 +55,7 @@ export function Cached(metadata?: ICachedMetadataInterface): MethodDecorator {
         };
         result = cacheResult(cacheInsertion);
       }
+      metadata.logger.log(result.value);
       return result;
     };
     return descriptor;

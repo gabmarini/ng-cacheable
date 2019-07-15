@@ -11,7 +11,8 @@
     "packagr": "ng-packagr -p ng-package.json",
     "dist": "rm -r dist && ng-packagr -p ng-package.json && npm publish dist"
   },
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
     "@angular/animations": "^6.1.0",
     "@angular/common": "^6.1.0",
     "@angular/compiler": "^6.1.0",
@@ -20,9 +21,7 @@
     "@angular/http": "^6.1.0",
     "@angular/platform-browser": "^6.1.0",
     "@angular/platform-browser-dynamic": "^6.1.0",
-    "@angular/router": "^6.1.0"
-  },
-  "devDependencies": {
+    "@angular/router": "^6.1.0",
     "@angular-devkit/build-angular": "~0.8.0",
     "@angular/cli": "~6.2.9",
     "@angular/compiler-cli": "^6.1.0",
