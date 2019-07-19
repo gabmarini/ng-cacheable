@@ -1,16 +1,22 @@
 import * as momentImported from 'moment';
-import {CacheItem} from '../interfaces/cache.item';
 import {Moment} from 'moment';
-import {CacheInsertion} from '../interfaces/cache-insertion.interface';
+import {CacheItem} from '../interfaces/cache.item';
 import {CacheLogger} from '../interfaces/Icacheable-metadata.interface';
+import {CacheConfiguration} from '../configurations/cache-configuration.configuration';
+import {CacheInsertion} from '../interfaces/cache-insertion.interface';
+import {CacheMap} from './cache-map.service';
 
 const moment = momentImported;
 
+interface CacheServiceI {
+  canBeCacheHit(method: string, args: any[]): boolean;
+}
+
 // @dynamic
-export class CacheService {
+export class CacheService implements CacheServiceI {
 
   public set logger(loggerInstance: CacheLogger) {
-    if(!!loggerInstance) {
+    if (!!loggerInstance) {
       this._logger = loggerInstance;
     } else {
       this._logger = {log: () => {}};
@@ -18,13 +24,14 @@ export class CacheService {
   }
 
   private constructor() {
-    this.cacheMap = new Map<string, any>();
+    this.logger = new CacheConfiguration.logger;
+    this.cacheMapInstance = CacheMap.getInstance();
   }
 
   private static instance: CacheService = null;
 
   private _logger: CacheLogger;
-  private readonly cacheMap: Map<string, CacheItem>;
+  private readonly cacheMapInstance: CacheMap;
 
   static getInstance(): CacheService {
     if (!CacheService.instance) {
@@ -58,21 +65,10 @@ export class CacheService {
     return CacheService.hashString(CacheService.buildPreHashedKey(method, args));
   }
 
-  insertCacheResult(cacheInsertion: CacheInsertion) {
-    this._logger.log(`inserting into cache: ${JSON.stringify(cacheInsertion, undefined, 3)}`);
-    const map = this.cacheMap.set(cacheInsertion.cacheKey, {
-      cachedResult: cacheInsertion.result,
-      expirationTimeMillis: moment().valueOf() + cacheInsertion.ttl,
-      bustingKey: cacheInsertion.bustingKey
-    });
-    this._logger.log(`inserted`);
-    this._logger.log(`new cache map: ${JSON.stringify(Array.from(this.cacheMap.entries()), undefined, 3)}`);
-  }
-
   canBeCacheHit(method: string, args: any[]): boolean {
     const hashedKey: string = CacheService.buildHashedKey(method, args);
-    if (this.cacheMap.has(hashedKey)) {
-      const cacheItem: CacheItem = this.cacheMap.get(hashedKey);
+    if (this.cacheMapInstance.cacheMap.has(hashedKey)) {
+      const cacheItem: CacheItem = this.cacheMapInstance.cacheMap.get(hashedKey);
       this._logger.log(`cache hitted for ${method} - ${args}`);
       return CacheService.isFreshCacheItem(cacheItem);
     }
@@ -81,18 +77,21 @@ export class CacheService {
 
   getCacheHit(method: string, args: any[]) {
     this._logger.log(`retrieving cache hit for ${method} - ${args}`);
-    return this.cacheMap.get(CacheService.buildHashedKey(method, args)).cachedResult;
+    return this.cacheMapInstance.cacheMap.get(CacheService.buildHashedKey(method, args)).cachedResult;
   }
 
   deleteCacheHit(key: string) {
-    Array.from(this.cacheMap.keys()).forEach((cacheKey: string) => {
-      const cacheItem: CacheItem = this.cacheMap.get(cacheKey);
+    Array.from(this.cacheMapInstance.cacheMap.keys()).forEach((cacheKey: string) => {
+      const cacheItem: CacheItem = this.cacheMapInstance.cacheMap.get(cacheKey);
       if (cacheItem.bustingKey === key) {
         this._logger.log(`deleting cache hit for ${cacheKey}`);
-        this.cacheMap.delete(cacheKey);
-        this._logger.log(`new cache map: ${JSON.stringify(Array.from(this.cacheMap.entries()), undefined, 3)}`);
+        this.cacheMapInstance.cacheMap.delete(cacheKey);
+        this._logger.log(`new cache map: ${JSON.stringify(Array.from(this.cacheMapInstance.cacheMap.entries()), undefined, 3)}`);
       }
     });
   }
 
+  insertCacheResult(cacheInsertion: CacheInsertion) {
+    this.cacheMapInstance.insertCacheResult(cacheInsertion);
+  }
 }

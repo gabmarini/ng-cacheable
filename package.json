@@ -1,6 +1,6 @@
 {
-  "name": "ng-cacheable",
-  "version": "0.1.1",
+  "name": "@gabmarini/ng-cacheable",
+  "version": "0.1.3",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -9,9 +9,11 @@
     "lint": "ng lint",
     "e2e": "ng e2e",
     "packagr": "ng-packagr -p ng-package.json",
-    "dist": "rm -r dist && ng-packagr -p ng-package.json && npm publish dist"
+    "dist": "rm -r dist && ng-packagr -p ng-package.json && npm publish dist --access public"
   },
   "dependencies": {},
+  "private": false,
+  "license": "ISC",
   "devDependencies": {
     "@angular/animations": "^6.1.0",
     "@angular/common": "^6.1.0",

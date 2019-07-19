@@ -2,24 +2,23 @@ import {ICacheBusterMetadataInterface, ICachedMetadataInterface} from '../interf
 import {CacheService} from '../services/cache.service';
 import {cacheResultOperator, Defaults} from '../constants/defaults.constant';
 import {isObservable, throwError} from 'rxjs';
-import {catchError} from 'rxjs/operators';
+import {catchError, tap} from 'rxjs/operators';
 import {CacheInsertion} from '../interfaces/cache-insertion.interface';
 
 
 export function Cached(metadata?: ICachedMetadataInterface): MethodDecorator {
 
-  CacheService.getInstance().logger = metadata.logger;
+  const cacheService: CacheService = CacheService.getInstance();
 
   function cacheResult(cacheInsertion: CacheInsertion) {
     if (isObservable(cacheInsertion.result)) {
       cacheInsertion.result = cacheInsertion.result.pipe(
         catchError(err => throwError(err)),
-        cacheResultOperator(cacheInsertion)
+        cacheResultOperator(cacheInsertion),
       );
     } else {
       if (!!cacheInsertion.result) {
-        CacheService.getInstance()
-          .insertCacheResult(cacheInsertion);
+        cacheService.insertCacheResult(cacheInsertion);
       }
     }
     return cacheInsertion.result;
@@ -35,12 +34,10 @@ export function Cached(metadata?: ICachedMetadataInterface): MethodDecorator {
 
     descriptor.value = function (...args: any[]) {
 
-      const service: CacheService = CacheService.getInstance();
-
-      const hasCacheHit = service.canBeCacheHit(method, args);
+      const hasCacheHit = cacheService.canBeCacheHit(method, args);
       let result;
       if (hasCacheHit) {
-        result = service.getCacheHit(method, args);
+        result = cacheService.getCacheHit(method, args);
       } else {
         result = originalMethod.apply(this, args);
         const cacheInsertion: CacheInsertion = {

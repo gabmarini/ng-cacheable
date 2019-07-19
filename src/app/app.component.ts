@@ -2,13 +2,12 @@ import {Component, OnInit} from '@angular/core';
 import {CacheBuster, Cached} from '../decorators/cacheable.decorator';
 import {HttpClient} from '@angular/common/http';
 import {interval, of} from 'rxjs';
-import {catchError } from 'rxjs/operators';
+import {catchError} from 'rxjs/operators';
 import {CacheLogger} from '../interfaces/Icacheable-metadata.interface';
 
 export class CacheLoggerTest implements CacheLogger {
   log = (payload: any) => {
-    console.log(payload);
-  }
+  };
 }
 
 const loggerTest = new CacheLoggerTest();
@@ -26,13 +25,15 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    interval(2000).subscribe(() => {
-      this.testMethod().pipe(catchError(err => {
-        return of(null);
-      })).subscribe();
+    interval(1000).subscribe(() => {
+      this.testMethod().pipe(
+        catchError(err => {
+          return of(null);
+        })
+      ).subscribe();
     });
 
-    interval(10000).subscribe(_ => {
+    interval(15000).subscribe(_ => {
       this.bustMethod().subscribe();
     });
   }
@@ -40,7 +41,6 @@ export class AppComponent implements OnInit {
   @Cached({
     cacheBustingKey: 'pippo',
     cacheTTL: 30 * 1000,
-    logger: loggerTest
   })
   testMethod() {
     return this.http.get('http://www.mocky.io/v2/5cefb6063000001b303cd250');
