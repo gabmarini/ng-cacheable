@@ -58,7 +58,7 @@ export class CacheService implements CacheServiceI {
   }
 
   static buildPreHashedKey(method: string, args: any[]) {
-    return `${method}|${args.join('')}`;
+    return `${method}|${JSON.stringify(args)}`;
   }
 
   static buildHashedKey(method: string, args: any[]) {
